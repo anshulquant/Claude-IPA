@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantanite Automation Hub</title>
+    <link rel="stylesheet" href="/static/shadcn-ui.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo-container">
+                    <img src="/static/quantanite_logo_black@512x-2.png" alt="Quantanite Logo" class="logo">
+                </div>
+                <div class="header-text">
+                    <h1><i class="fas fa-robot"></i> Quantanite Automation Hub</h1>
+                    <p>Intelligent Process Automation powered by Quantanite</p>
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <!-- Navigation Bar -->
+            <div class="card mb-6">
+                <div class="card-content">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-play-circle text-primary"></i>
+                            <h2 class="text-xl font-semibold">Workflow Automation</h2>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <a href="/review-queue" class="btn btn-primary">
+                                <i class="fas fa-clipboard-check"></i> Review Queue
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="main-content">
+                <div class="flex flex-col lg:flex-row gap-6 mb-8">
+                    <div class="flex-1">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-play-circle text-primary"></i>
+                                    <h2 class="card-title">Start New Workflow</h2>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <form id="workflow-form" class="space-y-4">
+                                    <div class="space-y-2">
+                                        <label for="goal" class="flex items-center space-x-2 text-sm font-medium">
+                                            <i class="fas fa-bullseye text-primary"></i>
+                                            <span>What would you like me to automate?</span>
+                                        </label>
+                                        <textarea 
+                                            id="goal" 
+                                            class="textarea"
+                                            placeholder="e.g., Go to Google and search for 'machine learning tutorials'"
+                                            required
+                                        ></textarea>
+                                    </div>
+                                    
+                                    <div class="space-y-2">
+                                        <label for="start-url" class="flex items-center space-x-2 text-sm font-medium">
+                                            <i class="fas fa-link text-primary"></i>
+                                            <span>Starting URL (optional)</span>
+                                        </label>
+                                        <input 
+                                            type="url" 
+                                            id="start-url" 
+                                            class="input"
+                                            placeholder="https://google.com"
+                                        >
+                                    </div>
+                                    
+                                    <button type="submit" id="submit-btn" class="btn btn-primary btn-lg w-full">
+                                        <i class="fas fa-rocket"></i> Start Automation
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                
+                    <div class="flex-1">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-info-circle text-primary"></i>
+                                    <h2 class="card-title">Additional Details</h2>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="space-y-4">
+                                    <div class="card">
+                                        <div class="card-content">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <i class="fas fa-cogs text-primary"></i>
+                                                <h3 class="font-semibold">Automation Features</h3>
+                                            </div>
+                                            <ul class="space-y-1 text-sm text-muted-foreground">
+                                                <li>Web browser automation</li>
+                                                <li>Form filling and submission</li>
+                                                <li>Data extraction and processing</li>
+                                                <li>Multi-step workflow execution</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card">
+                                        <div class="card-content">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <i class="fas fa-shield-alt text-primary"></i>
+                                                <h3 class="font-semibold">Human Review System</h3>
+                                            </div>
+                                            <ul class="space-y-1 text-sm text-muted-foreground">
+                                                <li>Low-confidence action detection</li>
+                                                <li>Human approval workflow</li>
+                                                <li>Priority-based review queue</li>
+                                                <li>Reviewer assignment system</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card">
+                                        <div class="card-content">
+                                            <div class="flex items-center space-x-2 mb-2">
+                                                <i class="fas fa-chart-line text-primary"></i>
+                                                <h3 class="font-semibold">Monitoring & Analytics</h3>
+                                            </div>
+                                            <ul class="space-y-1 text-sm text-muted-foreground">
+                                                <li>Real-time execution tracking</li>
+                                                <li>Performance metrics</li>
+                                                <li>Error logging and reporting</li>
+                                                <li>Workflow history</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            
+            <div id="workflow-status" class="card hidden">
+                <div class="card-header">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-tasks text-primary"></i>
+                        <h3 class="card-title">Workflow Status</h3>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-medium">Workflow ID:</span>
+                            <span id="workflow-id-display" class="font-mono text-sm bg-muted px-2 py-1 rounded"></span>
+                        </div>
+                        <div class="badge" id="status-badge">
+                            <span id="status-text">Starting...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2 mb-4">
+                        <div class="progress">
+                            <div class="progress-indicator" id="progress-fill" style="transform: scaleX(0);"></div>
+                        </div>
+                        <div class="text-center text-sm font-medium" id="progress-text">0%</div>
+                    </div>
+                    
+                    <div class="alert mb-4">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-cog fa-spin text-primary"></i>
+                            <span id="current-step">Initializing workflow...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-list text-primary"></i>
+                            <h4 class="font-semibold">Execution Log</h4>
+                        </div>
+                        <div id="log-container" class="bg-muted rounded p-4 max-h-60 overflow-y-auto">
+                            <!-- Log entries will be added here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="flex space-x-2">
+                        <button id="refresh-btn" class="btn btn-secondary">
+                            <i class="fas fa-sync"></i> Refresh Status
+                        </button>
+                        <button id="pause-btn" class="btn btn-warning hidden">
+                            <i class="fas fa-pause"></i> Pause
+                        </button>
+                        <button id="resume-btn" class="btn btn-success hidden">
+                            <i class="fas fa-play"></i> Resume
+                        </button>
+                        <button id="generate-report-btn" class="btn btn-info hidden">
+                            <i class="fas fa-chart-bar"></i> Generate Report
+                        </button>
+                        <button id="error-analytics-btn" class="btn btn-secondary hidden">
+                            <i class="fas fa-bug"></i> Error Analytics
+                        </button>
+                        <button id="new-workflow-btn" class="btn btn-primary hidden">
+                            <i class="fas fa-plus"></i> Start New Workflow
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Day 4 Features Section -->
+            <div id="day4-features" class="card hidden">
+                <div class="card-header">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-star text-primary"></i>
+                        <h3 class="card-title">Advanced Features</h3>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Enhanced Logging -->
+                        <div class="card">
+                            <div class="card-content">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <i class="fas fa-palette text-primary"></i>
+                                    <h4 class="font-semibold">Enhanced Logging</h4>
+                                </div>
+                                <p class="text-sm text-muted-foreground mb-3">Colored logs with progress indicators and status emojis</p>
+                                <button id="view-logs-btn" class="btn btn-sm btn-outline">
+                                    <i class="fas fa-eye"></i> View Logs
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Report Generation -->
+                        <div class="card">
+                            <div class="card-content">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <i class="fas fa-file-alt text-primary"></i>
+                                    <h4 class="font-semibold">Report Generation</h4>
+                                </div>
+                                <p class="text-sm text-muted-foreground mb-3">Generate detailed execution reports in multiple formats</p>
+                                <div class="flex space-x-2">
+                                    <button id="quick-report-btn" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-file-pdf"></i> Quick Report
+                                    </button>
+                                    <button id="custom-report-btn" class="btn btn-sm btn-outline">
+                                        <i class="fas fa-cog"></i> Custom
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Pause/Resume -->
+                        <div class="card">
+                            <div class="card-content">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <i class="fas fa-pause-circle text-primary"></i>
+                                    <h4 class="font-semibold">Pause/Resume</h4>
+                                </div>
+                                <p class="text-sm text-muted-foreground mb-3">Control workflow execution with pause and resume</p>
+                                <div class="flex space-x-2">
+                                    <button id="pause-workflow-btn" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-pause"></i> Pause
+                                    </button>
+                                    <button id="resume-workflow-btn" class="btn btn-sm btn-success">
+                                        <i class="fas fa-play"></i> Resume
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Error Handling -->
+                        <div class="card">
+                            <div class="card-content">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <i class="fas fa-shield-alt text-primary"></i>
+                                    <h4 class="font-semibold">Error Handling</h4>
+                                </div>
+                                <p class="text-sm text-muted-foreground mb-3">Advanced error recovery and analytics</p>
+                                <div class="flex space-x-2">
+                                    <button id="error-dashboard-btn" class="btn btn-sm btn-secondary">
+                                        <i class="fas fa-chart-line"></i> Dashboard
+                                    </button>
+                                    <button id="test-errors-btn" class="btn btn-sm btn-outline">
+                                        <i class="fas fa-vial"></i> Test
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- State Management -->
+                        <div class="card">
+                            <div class="card-content">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <i class="fas fa-save text-primary"></i>
+                                    <h4 class="font-semibold">State Management</h4>
+                                </div>
+                                <p class="text-sm text-muted-foreground mb-3">Save and restore workflow states</p>
+                                <div class="flex space-x-2">
+                                    <button id="save-state-btn" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-save"></i> Save State
+                                    </button>
+                                    <button id="load-state-btn" class="btn btn-sm btn-outline">
+                                        <i class="fas fa-upload"></i> Load State
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Analytics -->
+                        <div class="card">
+                            <div class="card-content">
+                                <div class="flex items-center space-x-2 mb-2">
+                                    <i class="fas fa-analytics text-primary"></i>
+                                    <h4 class="font-semibold">Analytics</h4>
+                                </div>
+                                <p class="text-sm text-muted-foreground mb-3">Performance metrics and error patterns</p>
+                                <div class="flex space-x-2">
+                                    <button id="performance-btn" class="btn btn-sm btn-info">
+                                        <i class="fas fa-tachometer-alt"></i> Performance
+                                    </button>
+                                    <button id="patterns-btn" class="btn btn-sm btn-outline">
+                                        <i class="fas fa-chart-pie"></i> Patterns
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="flex items-center space-x-2">
+                        <i class="fas fa-history text-primary"></i>
+                        <h3 class="card-title">Recent Workflows</h3>
+                    </div>
+                </div>
+                <div class="card-content">
+                    <div id="history-container">
+                        <div class="text-center text-muted-foreground">
+                            <i class="fas fa-spinner fa-spin"></i> Loading workflow history...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </div>
+            
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 Quantanite Automation Hub - Built with FastAPI and Quantanite</p>
+        </footer>
+    </div>
+    
+    <!-- Day 4 Feature Modals -->
+    
+    <!-- Report Generation Modal -->
+    <div id="report-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Generate Report</h3>
+                <button class="modal-close" onclick="closeModal('report-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Report Type</label>
+                        <select id="report-type" class="select">
+                            <option value="comprehensive">Comprehensive</option>
+                            <option value="performance">Performance</option>
+                            <option value="execution_log">Execution Log</option>
+                            <option value="review_analytics">Review Analytics</option>
+                            <option value="error_analysis">Error Analysis</option>
+                            <option value="summary">Summary</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Format</label>
+                        <select id="report-format" class="select">
+                            <option value="html">HTML</option>
+                            <option value="json">JSON</option>
+                            <option value="csv">CSV</option>
+                            <option value="pdf">PDF</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('report-modal')">Cancel</button>
+                <button class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Error Analytics Modal -->
+    <div id="error-analytics-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Error Analytics</h3>
+                <button class="modal-close" onclick="closeModal('error-analytics-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="error-analytics-content">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin"></i> Loading error analytics...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('error-analytics-modal')">Close</button>
+                <button class="btn btn-primary" onclick="refreshErrorAnalytics()">Refresh</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- State Management Modal -->
+    <div id="state-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Workflow State Management</h3>
+                <button class="modal-close" onclick="closeModal('state-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="state-management-content">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin"></i> Loading state management...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('state-modal')">Close</button>
+                <button class="btn btn-primary" onclick="refreshStateManagement()">Refresh</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Performance Analytics Modal -->
+    <div id="performance-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Performance Analytics</h3>
+                <button class="modal-close" onclick="closeModal('performance-modal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="performance-content">
+                    <div class="text-center">
+                        <i class="fas fa-spinner fa-spin"></i> Loading performance data...
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('performance-modal')">Close</button>
+                <button class="btn btn-primary" onclick="refreshPerformance()">Refresh</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/static/app.js"></script>
+</body>
+</html>

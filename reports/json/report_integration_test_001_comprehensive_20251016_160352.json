@@ -1,0 +1,104 @@
+{
+  "metadata": {
+    "generated_at": "2025-10-16T16:03:52.595373",
+    "report_type": "comprehensive",
+    "workflow_id": "integration_test_001",
+    "generator_version": "1.0.0"
+  },
+  "workflow_info": {
+    "id": "integration_test_001",
+    "goal": "Unknown goal",
+    "start_url": "https://google.com",
+    "status": "completed",
+    "created_at": "2025-10-16T16:03:52.595373",
+    "execution_time": 30.5,
+    "success": true,
+    "actions_taken": 5,
+    "error_message": null
+  },
+  "execution_log": [
+    {
+      "timestamp": "2025-10-16T16:03:52.583965",
+      "step": "Test Step 1",
+      "message": "Test message 1",
+      "status": "success"
+    },
+    {
+      "timestamp": "2025-10-16T16:03:52.583965",
+      "step": "Test Step 2",
+      "message": "Test message 2",
+      "status": "info"
+    }
+  ],
+  "performance_metrics": {
+    "total_execution_time": 30.5,
+    "average_step_time": 15.25,
+    "retry_count": 0,
+    "error_count": 0,
+    "success_rate": 1.0
+  },
+  "calculated_metrics": {
+    "total_steps": 2,
+    "successful_steps": 1,
+    "failed_steps": 0,
+    "warning_steps": 0,
+    "success_rate": 50.0,
+    "failure_rate": 0.0,
+    "total_duration": 0.0,
+    "average_step_time": 0.0,
+    "action_types": {
+      "Test Step 1": 1,
+      "Test Step 2": 1
+    },
+    "total_reviews": 0,
+    "pending_reviews": 0,
+    "approved_reviews": 0,
+    "rejected_reviews": 0,
+    "review_approval_rate": 0
+  },
+  "review_items": [],
+  "error_analysis": {
+    "total_errors": 0,
+    "error_types": {},
+    "error_messages": [],
+    "error_rate": 0.0
+  },
+  "step_analysis": {
+    "total_steps": 2,
+    "step_breakdown": {
+      "Test Step 1": {
+        "status": "success",
+        "message": "Test message 1",
+        "timestamp": "2025-10-16T16:03:52.583965"
+      },
+      "Test Step 2": {
+        "status": "info",
+        "message": "Test message 2",
+        "timestamp": "2025-10-16T16:03:52.583965"
+      }
+    },
+    "step_timings": [],
+    "status_distribution": {
+      "success": 1,
+      "info": 1
+    }
+  },
+  "timeline": [
+    {
+      "step_number": 1,
+      "timestamp": "2025-10-16T16:03:52.583965",
+      "step": "Test Step 1",
+      "status": "success",
+      "message": "Test message 1",
+      "duration": 0
+    },
+    {
+      "step_number": 2,
+      "timestamp": "2025-10-16T16:03:52.583965",
+      "step": "Test Step 2",
+      "status": "info",
+      "message": "Test message 2",
+      "duration": 0
+    }
+  ]
+}

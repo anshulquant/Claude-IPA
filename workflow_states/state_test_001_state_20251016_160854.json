@@ -1,0 +1,43 @@
+{
+  "workflow_id": "state_test_001",
+  "current_step": 5,
+  "execution_log": [
+    {
+      "timestamp": "2025-10-16T16:08:54.702661",
+      "step": "Step 1",
+      "message": "Test step 1",
+      "status": "success"
+    },
+    {
+      "timestamp": "2025-10-16T16:08:54.702661",
+      "step": "Step 2",
+      "message": "Test step 2",
+      "status": "success"
+    },
+    {
+      "timestamp": "2025-10-16T16:08:54.702661",
+      "step": "Step 3",
+      "message": "Test step 3",
+      "status": "info"
+    }
+  ],
+  "performance_metrics": {
+    "total_execution_time": 15.5,
+    "average_step_time": 3.1,
+    "retry_count": 0,
+    "error_count": 0,
+    "success_rate": 1.0
+  },
+  "is_paused": false,
+  "pause_reason": null,
+  "paused_at": null,
+  "pause_count": 0,
+  "resume_count": 0,
+  "pause_history": [],
+  "max_steps": 20,
+  "confidence_threshold": 0.7,
+  "circuit_breaker_failures": 0,
+  "last_failure_time": null,
+  "saved_at": "2025-10-16T16:08:54.702661",
+  "version": "1.0.0"
+}

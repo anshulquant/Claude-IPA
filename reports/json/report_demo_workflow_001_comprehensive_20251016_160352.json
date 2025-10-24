@@ -1,0 +1,285 @@
+{
+  "metadata": {
+    "generated_at": "2025-10-16T16:03:52.573145",
+    "report_type": "comprehensive",
+    "workflow_id": "demo_workflow_001",
+    "generator_version": "1.0.0"
+  },
+  "workflow_info": {
+    "id": "demo_workflow_001",
+    "goal": "Search for machine learning tutorials on Google",
+    "start_url": "https://google.com",
+    "status": "completed",
+    "created_at": "2025-10-16T16:03:52.567552",
+    "execution_time": 45.2,
+    "success": true,
+    "actions_taken": 8,
+    "error_message": null
+  },
+  "execution_log": [
+    {
+      "timestamp": "2024-01-01T10:00:00",
+      "step": "🚀 Initialization",
+      "message": "Starting workflow: Search for machine learning tutorials",
+      "status": "info"
+    },
+    {
+      "timestamp": "2024-01-01T10:00:05",
+      "step": "🌐 Navigate to starting URL",
+      "message": "Successfully navigated to https://google.com",
+      "status": "success"
+    },
+    {
+      "timestamp": "2024-01-01T10:00:08",
+      "step": "📸 Capture initial screenshot",
+      "message": "Screenshot captured successfully",
+      "status": "success"
+    },
+    {
+      "timestamp": "2024-01-01T10:00:12",
+      "step": "🧠 Analyze page with Claude AI",
+      "message": "Page analysis completed by Claude AI",
+      "status": "success"
+    },
+    {
+      "timestamp": "2024-01-01T10:00:18",
+      "step": "Step 1: Click search input",
+      "message": "Successfully clicked on search input",
+      "status": "success"
+    },
+    {
+      "timestamp": "2024-01-01T10:00:22",
+      "step": "Step 2: Type search query",
+      "message": "Successfully typed 'machine learning tutorials' into search input",
+      "status": "success"
+    },
+    {
+      "timestamp": "2024-01-01T10:00:28",
+      "step": "Step 3: Click search button",
+      "message": "Successfully clicked on search button",
+      "status": "success"
+    },
+    {
+      "timestamp": "2024-01-01T10:00:35",
+      "step": "Step 4: Handle suspicious popup",
+      "message": "Action requires human approval (confidence: 0.30)",
+      "status": "warning"
+    },
+    {
+      "timestamp": "2024-01-01T10:00:42",
+      "step": "✅ Human Review",
+      "message": "Action approved by human reviewer",
+      "status": "success"
+    },
+    {
+      "timestamp": "2024-01-01T10:00:45",
+      "step": "✅ Workflow completed",
+      "message": "Workflow goal achieved",
+      "status": "success"
+    }
+  ],
+  "performance_metrics": {
+    "total_execution_time": 45.2,
+    "average_step_time": 5.65,
+    "retry_count": 1,
+    "error_count": 0,
+    "success_rate": 0.9
+  },
+  "calculated_metrics": {
+    "total_steps": 10,
+    "successful_steps": 8,
+    "failed_steps": 0,
+    "warning_steps": 1,
+    "success_rate": 80.0,
+    "failure_rate": 0.0,
+    "total_duration": 45.0,
+    "average_step_time": 4.5,
+    "action_types": {
+      "🚀 Initialization": 1,
+      "🌐 Navigate to starting URL": 1,
+      "📸 Capture initial screenshot": 1,
+      "🧠 Analyze page with Claude AI": 1,
+      "Step 1": 1,
+      "Step 2": 1,
+      "Step 3": 1,
+      "Step 4": 1,
+      "✅ Human Review": 1,
+      "✅ Workflow completed": 1
+    },
+    "total_reviews": 1,
+    "pending_reviews": 0,
+    "approved_reviews": 1,
+    "rejected_reviews": 0,
+    "review_approval_rate": 100.0
+  },
+  "review_items": [
+    {
+      "id": "review_001",
+      "workflow_id": "demo_workflow_001",
+      "step_number": 4,
+      "action_type": "click",
+      "reason": "Action requires human approval: Detected suspicious popup that may need human review",
+      "priority": "high",
+      "category": "security",
+      "status": "approved",
+      "created_at": "2024-01-01T10:00:35",
+      "reviewed_at": "2024-01-01T10:00:40",
+      "assigned_to": "reviewer_001",
+      "tags": [
+        "low-confidence",
+        "click-action",
+        "popup-handling",
+        "high-risk"
+      ]
+    }
+  ],
+  "error_analysis": {
+    "total_errors": 0,
+    "error_types": {},
+    "error_messages": [],
+    "error_rate": 0.0
+  },
+  "step_analysis": {
+    "total_steps": 10,
+    "step_breakdown": {
+      "🚀 Initialization": {
+        "status": "info",
+        "message": "Starting workflow: Search for machine learning tutorials",
+        "timestamp": "2024-01-01T10:00:00"
+      },
+      "🌐 Navigate to starting URL": {
+        "status": "success",
+        "message": "Successfully navigated to https://google.com",
+        "timestamp": "2024-01-01T10:00:05"
+      },
+      "📸 Capture initial screenshot": {
+        "status": "success",
+        "message": "Screenshot captured successfully",
+        "timestamp": "2024-01-01T10:00:08"
+      },
+      "🧠 Analyze page with Claude AI": {
+        "status": "success",
+        "message": "Page analysis completed by Claude AI",
+        "timestamp": "2024-01-01T10:00:12"
+      },
+      "Step 1: Click search input": {
+        "status": "success",
+        "message": "Successfully clicked on search input",
+        "timestamp": "2024-01-01T10:00:18"
+      },
+      "Step 2: Type search query": {
+        "status": "success",
+        "message": "Successfully typed 'machine learning tutorials' into search input",
+        "timestamp": "2024-01-01T10:00:22"
+      },
+      "Step 3: Click search button": {
+        "status": "success",
+        "message": "Successfully clicked on search button",
+        "timestamp": "2024-01-01T10:00:28"
+      },
+      "Step 4: Handle suspicious popup": {
+        "status": "warning",
+        "message": "Action requires human approval (confidence: 0.30)",
+        "timestamp": "2024-01-01T10:00:35"
+      },
+      "✅ Human Review": {
+        "status": "success",
+        "message": "Action approved by human reviewer",
+        "timestamp": "2024-01-01T10:00:42"
+      },
+      "✅ Workflow completed": {
+        "status": "success",
+        "message": "Workflow goal achieved",
+        "timestamp": "2024-01-01T10:00:45"
+      }
+    },
+    "step_timings": [],
+    "status_distribution": {
+      "info": 1,
+      "success": 8,
+      "warning": 1
+    }
+  },
+  "timeline": [
+    {
+      "step_number": 1,
+      "timestamp": "2024-01-01T10:00:00",
+      "step": "🚀 Initialization",
+      "status": "info",
+      "message": "Starting workflow: Search for machine learning tutorials",
+      "duration": 0
+    },
+    {
+      "step_number": 2,
+      "timestamp": "2024-01-01T10:00:05",
+      "step": "🌐 Navigate to starting URL",
+      "status": "success",
+      "message": "Successfully navigated to https://google.com",
+      "duration": 0
+    },
+    {
+      "step_number": 3,
+      "timestamp": "2024-01-01T10:00:08",
+      "step": "📸 Capture initial screenshot",
+      "status": "success",
+      "message": "Screenshot captured successfully",
+      "duration": 0
+    },
+    {
+      "step_number": 4,
+      "timestamp": "2024-01-01T10:00:12",
+      "step": "🧠 Analyze page with Claude AI",
+      "status": "success",
+      "message": "Page analysis completed by Claude AI",
+      "duration": 0
+    },
+    {
+      "step_number": 5,
+      "timestamp": "2024-01-01T10:00:18",
+      "step": "Step 1: Click search input",
+      "status": "success",
+      "message": "Successfully clicked on search input",
+      "duration": 0
+    },
+    {
+      "step_number": 6,
+      "timestamp": "2024-01-01T10:00:22",
+      "step": "Step 2: Type search query",
+      "status": "success",
+      "message": "Successfully typed 'machine learning tutorials' into search input",
+      "duration": 0
+    },
+    {
+      "step_number": 7,
+      "timestamp": "2024-01-01T10:00:28",
+      "step": "Step 3: Click search button",
+      "status": "success",
+      "message": "Successfully clicked on search button",
+      "duration": 0
+    },
+    {
+      "step_number": 8,
+      "timestamp": "2024-01-01T10:00:35",
+      "step": "Step 4: Handle suspicious popup",
+      "status": "warning",
+      "message": "Action requires human approval (confidence: 0.30)",
+      "duration": 0
+    },
+    {
+      "step_number": 9,
+      "timestamp": "2024-01-01T10:00:42",
+      "step": "✅ Human Review",
+      "status": "success",
+      "message": "Action approved by human reviewer",
+      "duration": 0
+    },
+    {
+      "step_number": 10,
+      "timestamp": "2024-01-01T10:00:45",
+      "step": "✅ Workflow completed",
+      "status": "success",
+      "message": "Workflow goal achieved",
+      "duration": 0
+    }
+  ]
+}

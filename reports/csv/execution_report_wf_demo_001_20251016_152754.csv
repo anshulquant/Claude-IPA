@@ -1,0 +1,14 @@
+Metric,Value,Unit,Description
+Workflow ID,wf_demo_001,,Unique workflow identifier
+Goal,Extract product information from e-commerce website search results,,Workflow objective
+Start Time,2025-10-16T15:17:54.796854,,Execution start timestamp
+End Time,2025-10-16T15:19:12.796854,,Execution end timestamp
+Total Duration,78.00,seconds,Total execution time
+Steps Completed,11,count,Number of completed steps
+Success Rate,81.82%,percentage,Overall success rate
+Error Count,1,count,Number of errors encountered
+Retry Count,1,count,Number of retry attempts
+Memory Peak,72.1,MB,Peak memory usage
+Memory Average,57.0,MB,Average memory usage
+Human Reviews,1,count,Number of human reviews
+Screenshots Taken,6,count,Number of screenshots captured
