@@ -176,10 +176,10 @@ class BrowserController:
     
     async def get_page_text(self) -> str:
         """
-        Get all visible text from the page.
+        Get visible text from the current page.
         
         Returns:
-            Visible text content from the page body
+            Page text content
         
         Raises:
             RuntimeError: If browser is not started
@@ -193,7 +193,82 @@ class BrowserController:
             return text
         except Exception as e:
             logger.error(f"Failed to get page text: {e}")
-            raise
+            return ""
+    
+    async def get_form_fields(self) -> str:
+        """
+        Extract form field information from the current page.
+        
+        Returns:
+            Formatted string with form field details (name, type, value, placeholder)
+        
+        Raises:
+            RuntimeError: If browser is not started
+        """
+        if self._page is None:
+            raise RuntimeError("Browser is not started. Call start() first.")
+        
+        try:
+            fields_info = []
+            
+            # Get all input fields
+            inputs = await self._page.query_selector_all('input')
+            for inp in inputs:
+                name = await inp.get_attribute('name') or ''
+                input_type = await inp.get_attribute('type') or 'text'
+                value = await inp.get_attribute('value') or ''
+                placeholder = await inp.get_attribute('placeholder') or ''
+                
+                if input_type in ['radio', 'checkbox']:
+                    fields_info.append(f"- input[name='{name}'][type='{input_type}'][value='{value}']")
+                else:
+                    field_str = f"- input[name='{name}'][type='{input_type}']"
+                    if placeholder:
+                        field_str += f" (placeholder: '{placeholder}')"
+                    fields_info.append(field_str)
+            
+            # Get all select fields
+            selects = await self._page.query_selector_all('select')
+            for sel in selects:
+                name = await sel.get_attribute('name') or ''
+                fields_info.append(f"- select[name='{name}']")
+            
+            # Get all textarea fields
+            textareas = await self._page.query_selector_all('textarea')
+            for ta in textareas:
+                name = await ta.get_attribute('name') or ''
+                placeholder = await ta.get_attribute('placeholder') or ''
+                field_str = f"- textarea[name='{name}']"
+                if placeholder:
+                    field_str += f" (placeholder: '{placeholder}')"
+                fields_info.append(field_str)
+
+            # Get all button elements (including submit buttons)
+            buttons = await self._page.query_selector_all('button, input[type="submit"], input[type="button"]')
+            for btn in buttons:
+                btn_type = await btn.get_attribute('type') or 'button'
+                try:
+                    btn_text = await btn.inner_text()
+                except:
+                    btn_text = ''
+                btn_name = await btn.get_attribute('name') or ''
+                btn_value = await btn.get_attribute('value') or ''
+
+                if btn_text:
+                    fields_info.append(f"- button (text: '{btn_text}')")
+                elif btn_name:
+                    fields_info.append(f"- button[name='{btn_name}']")
+                elif btn_value:
+                    fields_info.append(f"- input[type='{btn_type}'][value='{btn_value}']")
+                else:
+                    fields_info.append(f"- button[type='{btn_type}']")
+
+            result = "\n".join(fields_info) if fields_info else "No form fields found"
+            logger.info(f"Extracted {len(fields_info)} form fields")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to get form fields: {e}")
+            return ""
     
     async def get_page_html(self) -> str:
         """
@@ -272,6 +347,14 @@ class BrowserController:
         if self._page is None:
             raise RuntimeError("Browser is not started. Call start() first.")
         
+        # Try to simplify problematic selectors
+        original_selector = selector
+        if ':first-of-type' in selector or ':nth-child' in selector or ':nth-of-type' in selector:
+            # Try using >> nth=0 syntax instead
+            base_selector = selector.split(':')[0]
+            logger.info(f"Simplifying selector from '{selector}' to '{base_selector} >> nth=0'")
+            selector = f"{base_selector} >> nth=0"
+        
         for attempt in range(retry):
             try:
                 logger.info(f"Attempting to click element: {selector} (attempt {attempt + 1}/{retry})")
@@ -280,9 +363,34 @@ class BrowserController:
                 logger.info(f"Successfully clicked: {selector}")
                 return True
             except Exception as e:
+                # On last attempt, try case-insensitive value matching for radio/checkbox
+                if attempt == retry - 1 and 'value=' in original_selector and ('radio' in original_selector or 'checkbox' in original_selector):
+                    try:
+                        import re
+                        # Extract the value
+                        value_match = re.search(r"value=['\"]([^'\"]+)['\"]", original_selector)
+                        if value_match:
+                            value = value_match.group(1)
+                            logger.warning(f"Exact selector failed, trying case-insensitive match for value '{value}'")
+                            
+                            # Determine input type
+                            input_type = 'radio' if 'radio' in original_selector else 'checkbox'
+                            
+                            # Find all radio/checkbox inputs
+                            all_inputs = await self._page.query_selector_all(f'input[type="{input_type}"]')
+                            for inp in all_inputs:
+                                inp_value = await inp.get_attribute('value')
+                                if inp_value and inp_value.lower() == value.lower():
+                                    logger.info(f"Found case-insensitive match: value='{inp_value}'")
+                                    await inp.click()
+                                    logger.info(f"Successfully clicked case-matched element")
+                                    return True
+                    except Exception as case_error:
+                        logger.warning(f"Case-insensitive matching also failed: {case_error}")
+                
                 if attempt == retry - 1:
-                    logger.error(f"Failed to click {selector} after {retry} attempts: {e}")
-                    raise Exception(f"Failed to click {selector}: {e}")
+                    logger.error(f"Failed to click {original_selector} after {retry} attempts: {e}")
+                    raise Exception(f"Failed to click {original_selector}: {e}")
                 logger.warning(f"Click attempt {attempt + 1} failed, retrying...")
                 await asyncio.sleep(1)
         
@@ -341,6 +449,14 @@ class BrowserController:
         if self._page is None:
             raise RuntimeError("Browser is not started. Call start() first.")
         
+        # Try to simplify problematic selectors
+        original_selector = selector
+        if ':first-of-type' in selector or ':nth-child' in selector or ':nth-of-type' in selector:
+            # Try using >> nth=0 syntax instead
+            base_selector = selector.split(':')[0]
+            logger.info(f"Simplifying selector from '{selector}' to '{base_selector} >> nth=0'")
+            selector = f"{base_selector} >> nth=0"
+        
         for attempt in range(retry):
             try:
                 logger.info(f"Attempting to type into: {selector} (attempt {attempt + 1}/{retry})")
@@ -354,9 +470,57 @@ class BrowserController:
                 logger.info(f"Successfully typed into: {selector}")
                 return True
             except Exception as e:
+                # On last attempt, try fuzzy matching if it's a name selector
+                if attempt == retry - 1 and 'name=' in original_selector:
+                    try:
+                        # Extract the name value
+                        import re
+                        match = re.search(r"name=['\"]([^'\"]+)['\"]", original_selector)
+                        if match:
+                            name_value = match.group(1)
+                            logger.warning(f"Exact selector failed, trying fuzzy match for name containing '{name_value}'")
+                            
+                            # Normalize the search term (remove spaces, lowercase)
+                            normalized_search = name_value.lower().replace(' ', '').replace('_', '').replace('-', '')
+                            
+                            # Try to find a similar field
+                            all_inputs = await self._page.query_selector_all('input, textarea')
+                            for inp in all_inputs:
+                                inp_name = await inp.get_attribute('name')
+                                if inp_name:
+                                    normalized_inp_name = inp_name.lower().replace(' ', '').replace('_', '').replace('-', '')
+                                    
+                                    # Check if either contains the other, or if they share significant overlap
+                                    if (normalized_search in normalized_inp_name or 
+                                        normalized_inp_name in normalized_search or
+                                        any(part in normalized_inp_name for part in normalized_search.split() if len(part) > 3)):
+                                        logger.info(f"Found fuzzy match: '{inp_name}' matches '{name_value}'")
+                                        if clear_first:
+                                            await inp.fill(text)
+                                        else:
+                                            await inp.type(text)
+                                        logger.info(f"Successfully typed into fuzzy-matched field: {inp_name}")
+                                        return True
+                            
+                            # If no name match found, try matching by input type (e.g., "time" -> type="time")
+                            logger.warning(f"No name match found, trying to match by input type")
+                            for inp in all_inputs:
+                                inp_type = await inp.get_attribute('type')
+                                if inp_type and normalized_search in inp_type.lower():
+                                    inp_name = await inp.get_attribute('name')
+                                    logger.info(f"Found type-based match: input[type='{inp_type}'][name='{inp_name}']")
+                                    if clear_first:
+                                        await inp.fill(text)
+                                    else:
+                                        await inp.type(text)
+                                    logger.info(f"Successfully typed into type-matched field: {inp_name}")
+                                    return True
+                    except Exception as fuzzy_error:
+                        logger.warning(f"Fuzzy matching also failed: {fuzzy_error}")
+                
                 if attempt == retry - 1:
-                    logger.error(f"Failed to type into {selector} after {retry} attempts: {e}")
-                    raise Exception(f"Failed to type into {selector}: {e}")
+                    logger.error(f"Failed to type into {original_selector} after {retry} attempts: {e}")
+                    raise Exception(f"Failed to type into {original_selector}: {e}")
                 logger.warning(f"Type attempt {attempt + 1} failed, retrying...")
                 await asyncio.sleep(1)
         

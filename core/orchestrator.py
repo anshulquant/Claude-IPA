@@ -54,7 +54,8 @@ class ClaudeOrchestrator:
         screenshot_b64: str,
         goal: str,
         current_step: str,
-        page_text: str = ""
+        page_text: str = "",
+        form_fields: str = ""
     ) -> dict:
         """
         Analyze screenshot and decide next action.
@@ -64,6 +65,7 @@ class ClaudeOrchestrator:
             goal: Overall goal/objective
             current_step: Description of current step
             page_text: Visible text from page (for context)
+            form_fields: Form field information (names, types, values)
         
         Returns:
             {
@@ -79,7 +81,7 @@ class ClaudeOrchestrator:
         logger.info(f"Current step: {current_step}")
         
         # Build prompt for Claude
-        prompt = self._build_decision_prompt(goal, current_step, page_text)
+        prompt = self._build_decision_prompt(goal, current_step, page_text, form_fields)
         
         try:
             # Call Claude API with vision
@@ -110,7 +112,17 @@ class ClaudeOrchestrator:
             # Parse response
             response_text = response.content[0].text
             logger.info(f"Claude response: {response_text[:200]}...")
-            
+
+            # Strip markdown code blocks if present
+            response_text = response_text.strip()
+            if response_text.startswith('```json'):
+                response_text = response_text[7:]  # Remove ```json
+            elif response_text.startswith('```'):
+                response_text = response_text[3:]  # Remove ```
+            if response_text.endswith('```'):
+                response_text = response_text[:-3]  # Remove trailing ```
+            response_text = response_text.strip()
+
             # Parse JSON
             action_data = json.loads(response_text)
             
@@ -153,15 +165,15 @@ class ClaudeOrchestrator:
     async def generate_workflow_plan(self, natural_language_goal: str) -> List[str]:
         """
         Generate step-by-step workflow plan from natural language goal.
-        
+
         Args:
             natural_language_goal: User's goal in plain English
-        
+
         Returns:
             List of step descriptions: ["Step 1", "Step 2", ...]
         """
         logger.info(f"Generating workflow plan for: {natural_language_goal}")
-        
+
         prompt = f"""Break down this goal into specific, actionable steps for browser automation:
 
 GOAL: {natural_language_goal}
@@ -188,28 +200,187 @@ Return only the JSON array, no other text:"""
                     }
                 ]
             )
-            
+
             response_text = response.content[0].text
             logger.info(f"Workflow plan response: {response_text[:200]}...")
-            
+
             # Parse JSON array
             steps = json.loads(response_text)
-            
+
             if not isinstance(steps, list):
                 logger.error("Response is not a list")
                 return ["Error: Could not generate workflow plan"]
-            
+
             logger.info(f"Generated {len(steps)} steps")
             return steps
-            
+
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse workflow plan: {e}")
             return ["Error: Could not parse workflow plan"]
         except Exception as e:
             logger.error(f"Error generating workflow plan: {e}")
             return [f"Error: {str(e)}"]
+
+    async def analyze_and_fill_form(
+        self,
+        screenshot_b64: str,
+        form_fields: str,
+        goal: str,
+        form_data: Optional[Dict[str, any]] = None
+    ) -> Dict[str, any]:
+        """
+        Analyze form and generate a complete filling plan for all fields at once.
+
+        This is more efficient than the step-by-step approach - analyzes the entire form
+        and returns all actions needed to fill it completely.
+
+        Args:
+            screenshot_b64: Base64 encoded screenshot
+            form_fields: Structured form field information from get_form_fields()
+            goal: What the form is for (e.g., "Pizza order form")
+            form_data: Optional predefined data to fill (e.g., {"name": "John", "email": "john@example.com"})
+
+        Returns:
+            {
+                "actions": [
+                    {"action": "type", "target": "input[name='custname']", "value": "John Doe"},
+                    {"action": "type", "target": "input[name='custemail']", "value": "john@example.com"},
+                    {"action": "click", "target": "input[name='size'][value='medium']"},
+                    {"action": "click", "target": "input[type='submit']"}
+                ],
+                "reasoning": "Explanation of the plan",
+                "confidence": 0.9,
+                "needs_human_review": false
+            }
+        """
+        logger.info(f"Analyzing form for batch filling: {goal}")
+
+        # Build prompt
+        prompt = f"""You are a form-filling assistant. Analyze this form screenshot and generate a COMPLETE plan to fill ALL fields at once.
+
+GOAL: {goal}
+
+FORM FIELDS DETECTED:
+{form_fields}
+
+PREDEFINED DATA (use this if available):
+{json.dumps(form_data, indent=2) if form_data else "None - generate appropriate test data"}
+
+YOUR TASK:
+1. Identify ALL form fields visible in the screenshot
+2. Generate appropriate data for EACH field (use predefined data if provided, otherwise create realistic test data)
+3. Return a COMPLETE list of actions to fill the ENTIRE form and submit it
+
+Return ONLY valid JSON with this structure:
+{{
+    "actions": [
+        {{"action": "type", "target": "input[name='fieldname']", "value": "text to enter"}},
+        {{"action": "click", "target": "input[type='radio'][value='option']"}},
+        ...
+    ],
+    "reasoning": "Brief explanation of the filling strategy",
+    "confidence": 0.95,
+    "needs_human_review": false
+}}
+
+ACTION TYPES:
+- "type": For text inputs, email, tel, textarea, time, etc. (target = CSS selector, value = text/data)
+- "click": For radio buttons, checkboxes, submit buttons (target = CSS selector)
+- "select": For dropdown menus (target = CSS selector, value = option to select)
+
+SELECTOR BEST PRACTICES:
+- ALWAYS use the exact selectors from FORM FIELDS DETECTED above
+- PREFER input[name='exactname'] format (most reliable)
+- For radio/checkbox: input[name='fieldname'][value='optionvalue']
+- For buttons with text: use "button" selector or click by text (e.g., if FORM FIELDS shows "button (text: 'Submit order')", use "button" as target)
+- For submit buttons: use "button" or "input[type='submit']" depending on what's detected
+
+IMPORTANT RULES:
+1. Include actions for ALL visible form fields, not just some
+2. Use realistic, appropriate test data for each field type
+3. Follow logical order: text fields first, then radio/checkboxes, then submit
+4. For time fields, use format "HH:MM" (e.g., "19:00")
+5. For email fields, use valid email format
+6. For phone fields, use valid phone format
+7. Set needs_human_review=true only for sensitive actions (payment, delete account, etc.)
+8. The submit button is usually at the end - make sure to include it!
+
+Return ONLY the JSON, no other text:"""
+
+        try:
+            # Call Claude API with vision
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=2048,  # Larger token limit for comprehensive form analysis
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": "image/png",
+                                    "data": screenshot_b64
+                                }
+                            },
+                            {
+                                "type": "text",
+                                "text": prompt
+                            }
+                        ]
+                    }
+                ]
+            )
+
+            # Parse response
+            response_text = response.content[0].text
+            logger.info(f"Form analysis response: {response_text[:300]}...")
+
+            # Strip markdown code blocks if present
+            response_text = response_text.strip()
+            if response_text.startswith('```json'):
+                response_text = response_text[7:]  # Remove ```json
+            elif response_text.startswith('```'):
+                response_text = response_text[3:]  # Remove ```
+            if response_text.endswith('```'):
+                response_text = response_text[:-3]  # Remove trailing ```
+            response_text = response_text.strip()
+
+            # Parse JSON
+            plan = json.loads(response_text)
+
+            # Validate response
+            if "actions" not in plan or not isinstance(plan["actions"], list):
+                logger.error("Invalid form filling plan - missing actions array")
+                return {
+                    "actions": [],
+                    "reasoning": "Failed to generate valid form filling plan",
+                    "confidence": 0.0,
+                    "needs_human_review": True
+                }
+
+            logger.info(f"Generated plan with {len(plan['actions'])} actions")
+            return plan
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse form analysis response: {e}")
+            return {
+                "actions": [],
+                "reasoning": f"JSON parse error: {str(e)}",
+                "confidence": 0.0,
+                "needs_human_review": True
+            }
+        except Exception as e:
+            logger.error(f"Error analyzing form: {e}")
+            return {
+                "actions": [],
+                "reasoning": f"API error: {str(e)}",
+                "confidence": 0.0,
+                "needs_human_review": True
+            }
     
-    def _build_decision_prompt(self, goal: str, current_step: str, page_text: str) -> str:
+    def _build_decision_prompt(self, goal: str, current_step: str, page_text: str, form_fields: str = "") -> str:
         """
         Build comprehensive prompt for Claude to analyze screenshot.
         
@@ -217,6 +388,7 @@ Return only the JSON array, no other text:"""
             goal: Overall goal
             current_step: Current step description
             page_text: Page text for context
+            form_fields: Form field information
         
         Returns:
             Formatted prompt string
@@ -228,6 +400,10 @@ CURRENT STEP: {current_step}
 
 PAGE TEXT (for context):
 {page_text[:500] if page_text else "No text available"}...
+
+FORM FIELDS ON PAGE (use these EXACT selectors):
+{form_fields if form_fields else "No form fields detected"}
+
 
 Analyze the screenshot and return ONLY valid JSON with this exact structure:
 {{
@@ -241,14 +417,22 @@ Analyze the screenshot and return ONLY valid JSON with this exact structure:
 
 ACTION TYPES:
 - "click": Click an element (target = CSS selector like "button#submit" or "text=Click Here")
-- "type": Type text into input (target = CSS selector like "input[name='email']", value = text to type)
+- "type": Type text into input (target = CSS selector like "input[name='email']" or "#custname", value = text to type)
 - "navigate": Go to URL (target = full URL)
 - "complete": Goal is achieved (target = "", value = "")
 - "error": Cannot proceed (target = "", value = "", explain in reasoning)
 
+SELECTOR BEST PRACTICES:
+- PREFER name attribute: input[name='custname'] over input[type='text']:first-of-type
+- PREFER id attribute: #email over input[type='email']
+- AVOID pseudo-classes like :first-of-type, :nth-child - they may not work reliably
+- Use specific attributes when available (name, id, placeholder, aria-label)
+- READ field names CAREFULLY from the screenshot - don't guess or make up names
+- If you can't see the exact name attribute, use a more general selector like input[type='tel']
+
 IMPORTANT RULES:
-1. If you see a focused/active input field, use "type" action immediately - don't click again!
-2. After clicking an input field once, the next action should be "type" to enter text
+1. For input fields (text boxes, search boxes, etc.), use "type" action directly - clicking first is optional
+2. When you see an empty form field that needs data, use "type" action immediately with the appropriate value
 3. After typing into a search box, the system will automatically press Enter - don't try to click suggestions!
 4. If you see search results on the page, look for result links and click them using "text=..." format
 5. Use CSS selectors for "target" when possible (e.g., "input[name='q']", "button#submit")
@@ -257,7 +441,10 @@ IMPORTANT RULES:
 8. Set needs_human_review=true for risky actions (delete, submit payment, etc.)
 9. Use action="complete" when goal is fully achieved (e.g., you've clicked a search result and read the page)
 10. Use action="error" if goal cannot be completed
-11. AVOID clicking the same element repeatedly - if you just clicked an input, type into it next!
+11. PREFER "type" over "click" for form fields - the browser controller will handle focusing automatically
+12. For forms: identify the field selector and use "type" with appropriate data, don't click first
+13. NEVER fill the same field twice - if a field already has data, move to the next empty field
+14. Look at the CURRENT STEP number - if you're on step 3+, the first fields are likely already filled
 
 Return ONLY the JSON, no other text:"""
         
