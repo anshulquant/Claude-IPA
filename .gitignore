@@ -2,32 +2,26 @@
 __pycache__/
 *.py[cod]
 *$py.class
-*.so
-.Python
 venv/
 env/
-ENV/
+.venv/
+
+# Environment
+.env
 
 # IDE
 .vscode/
+.cursor/
 .idea/
-*.swp
-*.swo
 
-# Screenshots
-screenshots/*.png
-!screenshots/.gitkeep
-
-# Authentication (IMPORTANT: Keep private!)
-auth_state.json
-*.auth.json
-
-# Environment variables
-.env
-
-# Logs
+# Project specific
+logs/
+screenshots/
 *.log
 
 # OS
 .DS_Store
 Thumbs.db
+
+# FastAPI
+static/

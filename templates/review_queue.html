@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Review Queue Management - Quantanite Automation Hub</title>
+    <link rel="stylesheet" href="/static/shadcn-ui.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div class="logo-container">
+                    <img src="/static/quantanite_logo_black@512x-2.png" alt="Quantanite Logo" class="logo">
+                </div>
+                <div class="header-text">
+                    <h1><i class="fas fa-clipboard-check"></i> Review Queue Management</h1>
+                    <p>Intelligent Process Automation powered by Quantanite</p>
+                </div>
+            </div>
+        </header>
+        
+        <main>
+            <div class="review-queue-container">
+                <div class="card mb-6">
+                    <div class="card-content">
+                        <div class="flex justify-between items-center">
+                            <div class="flex items-center space-x-2">
+                                <i class="fas fa-clipboard-check text-primary"></i>
+                                <h2 class="text-xl font-semibold">Review Queue Management</h2>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <button id="refresh-reviews-btn" class="btn btn-primary">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                                <button id="export-reviews-btn" class="btn btn-secondary">
+                                    <i class="fas fa-download"></i> Export
+                                </button>
+                                <a href="/" class="btn btn-primary">
+                                    <i class="fas fa-arrow-left"></i> Back to Workflow
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Review Statistics -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="card">
+                        <div class="card-content text-center">
+                            <div class="text-2xl font-bold text-primary mb-1" id="total-reviews">0</div>
+                            <div class="text-sm text-muted-foreground">Total Reviews</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-content text-center">
+                            <div class="text-2xl font-bold text-orange-500 mb-1" id="pending-reviews">0</div>
+                            <div class="text-sm text-muted-foreground">Pending</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-content text-center">
+                            <div class="text-2xl font-bold text-green-500 mb-1" id="approved-reviews">0</div>
+                            <div class="text-sm text-muted-foreground">Approved</div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-content text-center">
+                            <div class="text-2xl font-bold text-red-500 mb-1" id="overdue-reviews">0</div>
+                            <div class="text-sm text-muted-foreground">Overdue</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter and Search -->
+                <div class="card mb-6">
+                    <div class="card-content">
+                        <div class="flex flex-wrap gap-4 items-end">
+                            <div class="flex flex-col space-y-2 min-w-32">
+                                <label for="status-filter" class="text-sm font-medium">Status</label>
+                                <select id="status-filter" class="select">
+                                    <option value="">All Status</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="in_review">In Review</option>
+                                    <option value="approved">Approved</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col space-y-2 min-w-32">
+                                <label for="priority-filter" class="text-sm font-medium">Priority</label>
+                                <select id="priority-filter" class="select">
+                                    <option value="">All Priorities</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col space-y-2 min-w-32">
+                                <label for="category-filter" class="text-sm font-medium">Category</label>
+                                <select id="category-filter" class="select">
+                                    <option value="">All Categories</option>
+                                    <option value="security">Security</option>
+                                    <option value="performance">Performance</option>
+                                    <option value="accuracy">Accuracy</option>
+                                    <option value="user_experience">User Experience</option>
+                                </select>
+                            </div>
+                            <div class="flex flex-col space-y-2 flex-1 min-w-64">
+                                <label for="search-reviews" class="text-sm font-medium">Search</label>
+                                <div class="flex space-x-2">
+                                    <input type="text" id="search-reviews" class="input flex-1" placeholder="Search reviews...">
+                                    <button id="search-btn" class="btn btn-secondary">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex flex-col space-y-2">
+                                <label class="text-sm font-medium opacity-0">Clear</label>
+                                <button id="clear-filters-btn" class="btn btn-outline">
+                                    <i class="fas fa-times"></i> Clear Filters
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Review List -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="flex justify-between items-center">
+                            <h3 class="card-title">Review Items</h3>
+                            <div class="flex space-x-2">
+                                <button id="select-all-btn" class="btn btn-outline">Select All</button>
+                                <button id="batch-approve-btn" class="btn btn-primary" disabled>
+                                    <i class="fas fa-check"></i> Approve Selected
+                                </button>
+                                <button id="batch-reject-btn" class="btn btn-destructive" disabled>
+                                    <i class="fas fa-times"></i> Reject Selected
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-content">
+                        <div id="reviews-container">
+                            <div class="text-center text-muted-foreground">
+                                <i class="fas fa-spinner fa-spin"></i> Loading reviews...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 Quantanite Automation Hub - Built with FastAPI and Quantanite</p>
+        </footer>
+    </div>
+    
+    <script src="/static/review_queue.js"></script>
+</body>
+</html>

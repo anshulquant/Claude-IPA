@@ -1,0 +1,23 @@
+[
+  {
+    "title": "Wireless Bluetooth Headphones",
+    "price": "$99.99",
+    "rating": "4.5",
+    "availability": "In Stock",
+    "brand": "TechSound",
+    "sku": "TS-WH-001"
+  },
+  {
+    "headline": "AI Revolutionizes Web Automation",
+    "author": "Jane Smith",
+    "publish_date": "2025-01-16",
+    "category": "Technology",
+    "word_count": "850"
+  },
+  {
+    "company_name": "Quantanite Solutions",
+    "email": "contact@quantanite.com",
+    "phone": "+1-555-0123",
+    "website": "https://quantanite.com"
+  }
+]

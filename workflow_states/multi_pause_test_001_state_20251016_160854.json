@@ -1,0 +1,31 @@
+{
+  "workflow_id": "multi_pause_test_001",
+  "current_step": 0,
+  "execution_log": [],
+  "performance_metrics": {
+    "total_execution_time": 0.0,
+    "average_step_time": 0.0,
+    "retry_count": 0,
+    "error_count": 0,
+    "success_rate": 0.0
+  },
+  "is_paused": true,
+  "pause_reason": "Test pause cycle 1",
+  "paused_at": "2025-10-16T16:08:54.714981",
+  "pause_count": 1,
+  "resume_count": 0,
+  "pause_history": [
+    {
+      "timestamp": "2025-10-16T16:08:54.714981",
+      "reason": "Test pause cycle 1",
+      "step": 0,
+      "workflow_id": "multi_pause_test_001"
+    }
+  ],
+  "max_steps": 20,
+  "confidence_threshold": 0.7,
+  "circuit_breaker_failures": 0,
+  "last_failure_time": null,
+  "saved_at": "2025-10-16T16:08:54.716470",
+  "version": "1.0.0"
+}

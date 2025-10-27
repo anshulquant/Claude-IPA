@@ -1,0 +1,57 @@
+{
+  "workflow_id": "history_test_001",
+  "current_step": 0,
+  "execution_log": [
+    {
+      "timestamp": "2025-10-16T16:09:00.753061",
+      "step": "⏸️ Pause",
+      "message": "Workflow paused: Pause for maintenance",
+      "status": "warning"
+    },
+    {
+      "timestamp": "2025-10-16T16:09:01.754658",
+      "step": "▶️ Resume",
+      "message": "Workflow resumed: Resume after maintenance (paused for 1.0s)",
+      "status": "info"
+    }
+  ],
+  "performance_metrics": {
+    "total_execution_time": 0.0,
+    "average_step_time": 0.0,
+    "retry_count": 0,
+    "error_count": 0,
+    "success_rate": 0.0
+  },
+  "is_paused": true,
+  "pause_reason": "Pause for review",
+  "paused_at": "2025-10-16T16:09:01.754658",
+  "pause_count": 2,
+  "resume_count": 1,
+  "pause_history": [
+    {
+      "timestamp": "2025-10-16T16:09:00.751045",
+      "reason": "Pause for maintenance",
+      "step": 0,
+      "workflow_id": "history_test_001"
+    },
+    {
+      "timestamp": "2025-10-16T16:09:01.754658",
+      "reason": "Resume after maintenance",
+      "step": 0,
+      "workflow_id": "history_test_001",
+      "pause_duration": 1.003613
+    },
+    {
+      "timestamp": "2025-10-16T16:09:01.754658",
+      "reason": "Pause for review",
+      "step": 0,
+      "workflow_id": "history_test_001"
+    }
+  ],
+  "max_steps": 20,
+  "confidence_threshold": 0.7,
+  "circuit_breaker_failures": 0,
+  "last_failure_time": null,
+  "saved_at": "2025-10-16T16:09:01.754658",
+  "version": "1.0.0"
+}

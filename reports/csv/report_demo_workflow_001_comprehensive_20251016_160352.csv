@@ -1,0 +1,24 @@
+Metric,Value
+workflow_id,demo_workflow_001
+workflow_goal,Search for machine learning tutorials on Google
+workflow_start_url,https://google.com
+workflow_status,completed
+workflow_created_at,2025-10-16T16:03:52.567552
+workflow_execution_time,45.2
+workflow_success,True
+workflow_actions_taken,8
+workflow_error_message,
+metric_total_steps,10
+metric_successful_steps,8
+metric_failed_steps,0
+metric_warning_steps,1
+metric_success_rate,80.0
+metric_failure_rate,0.0
+metric_total_duration,45.0
+metric_average_step_time,4.5
+metric_action_types,"{'🚀 Initialization': 1, '🌐 Navigate to starting URL': 1, '📸 Capture initial screenshot': 1, '🧠 Analyze page with Claude AI': 1, 'Step 1': 1, 'Step 2': 1, 'Step 3': 1, 'Step 4': 1, '✅ Human Review': 1, '✅ Workflow completed': 1}"
+metric_total_reviews,1
+metric_pending_reviews,0
+metric_approved_reviews,1
+metric_rejected_reviews,0
+metric_review_approval_rate,100.0
