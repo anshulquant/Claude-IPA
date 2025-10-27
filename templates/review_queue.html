@@ -157,6 +157,91 @@
             <p>&copy; 2025 Quantanite Automation Hub - Built with FastAPI and Quantanite</p>
         </footer>
     </div>
+
+    <!-- Review Modal -->
+    <div id="review-modal" class="modal hidden">
+        <div class="modal-overlay" onclick="reviewManager.closeReviewModal()"></div>
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="modal-title">
+                    <i class="fas fa-clipboard-check"></i> Review Action
+                </h2>
+                <button class="modal-close" onclick="reviewManager.closeReviewModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Screenshot Display -->
+                <div class="mb-4">
+                    <h3 class="text-sm font-semibold mb-2">Screenshot:</h3>
+                    <div id="screenshot-container" class="border rounded p-2 bg-gray-50">
+                        <img id="review-screenshot" src="" alt="Screenshot" class="max-w-full rounded">
+                        <p class="text-xs text-muted-foreground text-center mt-2" id="screenshot-loading">
+                            Loading screenshot...
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Action Details -->
+                <div class="mb-4">
+                    <h3 class="text-sm font-semibold mb-2">Action Details:</h3>
+                    <div class="bg-gray-50 p-3 rounded space-y-2">
+                        <div><strong>Action:</strong> <span id="modal-action-type"></span></div>
+                        <div><strong>Target:</strong> <span id="modal-action-target"></span></div>
+                        <div><strong>Reason:</strong> <span id="modal-reason"></span></div>
+                        <div><strong>Priority:</strong> <span id="modal-priority"></span></div>
+                        <div><strong>Workflow:</strong> <span id="modal-workflow-id"></span></div>
+                        <div><strong>Step:</strong> <span id="modal-step-number"></span></div>
+                    </div>
+                </div>
+
+                <!-- Notes Field -->
+                <div class="mb-4">
+                    <label for="review-notes" class="block text-sm font-semibold mb-2">
+                        <i class="fas fa-sticky-note"></i> Notes (Optional):
+                    </label>
+                    <textarea 
+                        id="review-notes" 
+                        class="w-full p-2 border rounded"
+                        rows="3"
+                        placeholder="Add any notes about this review decision..."
+                    ></textarea>
+                </div>
+
+                <!-- Reviewer ID -->
+                <div class="mb-4">
+                    <label for="reviewer-id" class="block text-sm font-semibold mb-2">
+                        <i class="fas fa-user"></i> Your Reviewer ID:
+                    </label>
+                    <input 
+                        type="text" 
+                        id="reviewer-id" 
+                        class="w-full p-2 border rounded"
+                        placeholder="Enter your reviewer ID"
+                        value="web_user"
+                    >
+                </div>
+
+                <!-- Keyboard Shortcuts Hint -->
+                <div class="bg-blue-50 p-3 rounded text-sm">
+                    <strong><i class="fas fa-keyboard"></i> Keyboard Shortcuts:</strong>
+                    <ul class="mt-1 space-y-1">
+                        <li><kbd class="px-2 py-1 bg-white rounded border">A</kbd> - Approve</li>
+                        <li><kbd class="px-2 py-1 bg-white rounded border">R</kbd> - Reject</li>
+                        <li><kbd class="px-2 py-1 bg-white rounded border">Esc</kbd> - Close</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-destructive" onclick="reviewManager.submitReviewDecision(false)">
+                    <i class="fas fa-times"></i> Reject (R)
+                </button>
+                <button class="btn btn-primary" onclick="reviewManager.submitReviewDecision(true)">
+                    <i class="fas fa-check"></i> Approve (A)
+                </button>
+            </div>
+        </div>
+    </div>
     
     <script src="/static/review_queue.js"></script>
 </body>

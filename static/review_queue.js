@@ -96,11 +96,8 @@ class ReviewQueueManager {
                             <div class="flex justify-between items-center">
                                 <small class="text-muted-foreground">Created: ${new Date(review.created_at).toLocaleString()}</small>
                                 <div class="flex space-x-2">
-                                    <button class="btn btn-primary btn-sm" onclick="reviewManager.approveReview('${review.id}')">
-                                        <i class="fas fa-check"></i> Approve
-                                    </button>
-                                    <button class="btn btn-destructive btn-sm" onclick="reviewManager.rejectReview('${review.id}')">
-                                        <i class="fas fa-times"></i> Reject
+                                    <button class="btn btn-primary btn-sm" onclick="reviewManager.openReviewModal('${review.id}')">
+                                        <i class="fas fa-eye"></i> Review
                                     </button>
                                 </div>
                             </div>
@@ -338,6 +335,150 @@ class ReviewQueueManager {
             }
         } catch (error) {
             console.error('Error exporting reviews:', error);
+        }
+    }
+
+    // Modal Functions
+    currentReviewId = null;
+    currentReviewData = null;
+
+    openReviewModal(reviewId) {
+        this.currentReviewId = reviewId;
+        
+        // Load review details
+        this.loadReviewDetails(reviewId);
+        
+        // Show modal
+        const modal = document.getElementById('review-modal');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+        
+        // Setup keyboard shortcuts
+        this.setupKeyboardShortcuts();
+    }
+
+    closeReviewModal() {
+        const modal = document.getElementById('review-modal');
+        modal.classList.add('hidden');
+        document.body.style.overflow = '';
+        
+        // Clean up
+        this.currentReviewId = null;
+        this.currentReviewData = null;
+        this.removeKeyboardShortcuts();
+    }
+
+    setupKeyboardShortcuts() {
+        this.keyboardHandler = (e) => {
+            // Only handle if modal is open
+            const modal = document.getElementById('review-modal');
+            if (modal.classList.contains('hidden')) return;
+            
+            // Don't handle if typing in input/textarea
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            if (e.key === 'a' || e.key === 'A') {
+                e.preventDefault();
+                this.submitReviewDecision(true);
+            } else if (e.key === 'r' || e.key === 'R') {
+                e.preventDefault();
+                this.submitReviewDecision(false);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                this.closeReviewModal();
+            }
+        };
+        
+        document.addEventListener('keydown', this.keyboardHandler);
+    }
+
+    removeKeyboardShortcuts() {
+        if (this.keyboardHandler) {
+            document.removeEventListener('keydown', this.keyboardHandler);
+        }
+    }
+
+    async loadReviewDetails(reviewId) {
+        try {
+            const response = await fetch(`/api/review-queue/${reviewId}`);
+            const data = await response.json();
+            
+            if (data.success && data.review_item) {
+                this.currentReviewData = data.review_item;
+                this.populateModal(data.review_item);
+            }
+        } catch (error) {
+            console.error('Error loading review details:', error);
+        }
+    }
+
+    populateModal(review) {
+        // Set modal fields
+        document.getElementById('modal-action-type').textContent = review.action_type || 'N/A';
+        document.getElementById('modal-action-target').textContent = review.action_data?.target || review.target || 'N/A';
+        document.getElementById('modal-reason').textContent = review.reason || 'N/A';
+        document.getElementById('modal-priority').textContent = review.priority || 'N/A';
+        document.getElementById('modal-workflow-id').textContent = review.workflow_id || 'N/A';
+        document.getElementById('modal-step-number').textContent = review.step_number || 'N/A';
+        
+        // Load screenshot if available
+        if (review.action_data?.screenshot_path) {
+            this.loadScreenshot(review.action_data.screenshot_path);
+        } else {
+            // Hide loading text
+            document.getElementById('screenshot-loading').textContent = 'No screenshot available';
+        }
+    }
+
+    loadScreenshot(screenshotPath) {
+        const img = document.getElementById('review-screenshot');
+        const loading = document.getElementById('screenshot-loading');
+        
+        img.onload = () => {
+            loading.textContent = '';
+            img.style.display = 'block';
+        };
+        
+        img.onerror = () => {
+            loading.textContent = 'Screenshot not found';
+            img.style.display = 'none';
+        };
+        
+        img.src = screenshotPath;
+    }
+
+    async submitReviewDecision(approved) {
+        if (!this.currentReviewId) return;
+        
+        const reviewerId = document.getElementById('reviewer-id').value || 'web_user';
+        const notes = document.getElementById('review-notes').value || '';
+        
+        try {
+            const response = await fetch(`/api/review-queue/${this.currentReviewId}/submit`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    decision: approved,
+                    reviewer_id: reviewerId,
+                    notes: notes
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                this.closeReviewModal();
+                this.loadReviews();
+                this.loadReviewStats();
+                
+                // Show success message
+                const message = approved ? '✅ Review approved successfully!' : '❌ Review rejected successfully!';
+                alert(message);
+            } else {
+                alert('Failed to submit review');
+            }
+        } catch (error) {
+            console.error('Error submitting review decision:', error);
+            alert('Error submitting review');
         }
     }
 }

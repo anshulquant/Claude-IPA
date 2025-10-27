@@ -7,12 +7,14 @@ class WorkflowManager {
     constructor() {
         this.currentWorkflowId = null;
         this.statusInterval = null;
+        this.websocket = null;
         this.init();
     }
 
     init() {
         this.setupEventListeners();
         this.loadWorkflowHistory();
+        this.loadPendingReviews();
         this.setupDemoButtons();
         this.initializeUI();
     }
@@ -102,7 +104,7 @@ class WorkflowManager {
             this.currentWorkflowId = result.workflow_id;
             
             this.showWorkflowStatus();
-            this.startStatusPolling();
+            this.connectWebSocket(); // Connect via WebSocket instead of polling
             this.loadWorkflowHistory();
             
         } catch (error) {
@@ -133,6 +135,104 @@ class WorkflowManager {
         statusDiv.scrollIntoView({ behavior: 'smooth' });
     }
 
+    connectWebSocket() {
+        if (!this.currentWorkflowId) return;
+        
+        try {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/ws/workflow/${this.currentWorkflowId}`;
+            
+            this.websocket = new WebSocket(wsUrl);
+            
+            this.websocket.onopen = () => {
+                console.log('WebSocket connected');
+                this.addLogEntry('✅ Real-time connection established', 'success');
+            };
+            
+            this.websocket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                this.handleWebSocketUpdate(data);
+            };
+            
+            this.websocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                // Fallback to polling
+                this.startStatusPolling();
+            };
+            
+            this.websocket.onclose = () => {
+                console.log('WebSocket disconnected');
+                // Fallback to polling
+                this.startStatusPolling();
+            };
+        } catch (error) {
+            console.error('Error connecting WebSocket:', error);
+            // Fallback to polling
+            this.startStatusPolling();
+        }
+    }
+    
+    handleWebSocketUpdate(data) {
+        if (data.type === 'status' && data.data) {
+            const workflow = data.data;
+            
+            // Update progress
+            this.updateProgress(workflow.progress || 0);
+            
+            // Update status
+            this.updateWorkflowStatus(workflow.status);
+            
+            // Update current step
+            if (workflow.current_step) {
+                document.getElementById('current-step').textContent = workflow.current_step;
+            }
+            
+            // Display screenshot if available
+            if (workflow.screenshot_path) {
+                this.displayScreenshot(workflow.screenshot_path);
+            }
+            
+            // Display Claude reasoning if available
+            if (workflow.claude_reasoning) {
+                this.displayReasoning(workflow.claude_reasoning);
+            }
+        }
+    }
+    
+    displayScreenshot(screenshotPath) {
+        const screenshotSection = document.getElementById('screenshot-display');
+        const screenshotImg = document.getElementById('current-screenshot');
+        
+        if (screenshotSection && screenshotImg) {
+            // Show the section
+            screenshotSection.style.display = 'block';
+            
+            // Set image source
+            screenshotImg.src = screenshotPath;
+            
+            screenshotImg.onload = () => {
+                console.log('Screenshot loaded:', screenshotPath);
+            };
+            
+            screenshotImg.onerror = () => {
+                console.error('Failed to load screenshot:', screenshotPath);
+                // Try to load from static path
+                const staticPath = `/screenshots/${screenshotPath.split('/').pop()}`;
+                screenshotImg.src = staticPath;
+            };
+        }
+    }
+    
+    displayReasoning(reasoning) {
+        const reasoningSection = document.getElementById('reasoning-display');
+        const reasoningContent = document.getElementById('claude-reasoning');
+        
+        if (reasoningSection && reasoningContent) {
+            reasoningContent.textContent = reasoning;
+            reasoningSection.style.display = 'block';
+        }
+    }
+    
     startStatusPolling() {
         if (this.statusInterval) {
             clearInterval(this.statusInterval);
@@ -255,16 +355,31 @@ class WorkflowManager {
 
         } catch (error) {
             console.error('Error loading workflow history:', error);
-            const historyContainer = document.getElementById('history-container');
-            historyContainer.innerHTML = '<div class="text-center">Failed to load workflow history</div>';
+            const historyContainer = document.getElementById('workflow-history');
+            if (historyContainer) {
+                historyContainer.innerHTML = `<div class="empty-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Failed to load workflow history</p>
+                    <small>${error.message}</small>
+                </div>`;
+            }
         }
     }
 
     displayWorkflowHistory(workflows) {
-        const historyContainer = document.getElementById('history-container');
+        const historyContainer = document.getElementById('workflow-history');
+        
+        if (!historyContainer) {
+            console.error('historyContainer element not found');
+            return;
+        }
         
         if (!workflows || workflows.length === 0) {
-            historyContainer.innerHTML = '<div class="text-center text-muted-foreground">No workflows yet</div>';
+            historyContainer.innerHTML = `<div class="empty-state">
+                <i class="fas fa-inbox"></i>
+                <p>No workflows executed yet</p>
+                <small>Start your first automation above</small>
+            </div>`;
             return;
         }
 
@@ -797,6 +912,55 @@ class WorkflowManager {
         
         // Add loading state management
         this.setupLoadingStates();
+    }
+    
+    async loadPendingReviews() {
+        try {
+            const response = await fetch('/api/review-queue/pending');
+            if (response.ok) {
+                const reviews = await response.json();
+                this.displayPendingReviews(reviews);
+            }
+        } catch (error) {
+            console.error('Error loading pending reviews:', error);
+        }
+    }
+    
+    displayPendingReviews(reviews) {
+        const summaryContainer = document.getElementById('pending-reviews-summary');
+        const countBadge = document.getElementById('pending-reviews-count');
+        
+        if (!summaryContainer) return;
+        
+        // Update count
+        if (countBadge) {
+            countBadge.textContent = reviews.length;
+        }
+        
+        // Display reviews
+        if (reviews.length === 0) {
+            summaryContainer.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-check-circle text-green-500"></i>
+                    <p>No pending reviews</p>
+                    <small>All reviews have been processed</small>
+                </div>
+            `;
+        } else {
+            summaryContainer.innerHTML = reviews.slice(0, 3).map(review => `
+                <div class="review-item" style="border: 1px solid #e5e7eb; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem;">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="font-semibold text-sm" style="color: #1f2937;">${review.action_type || 'Action'}</div>
+                            <div class="text-xs" style="color: #6b7280;">Priority: ${review.priority || 'medium'}</div>
+                        </div>
+                        <a href="/review-queue" class="btn btn-primary btn-xs">
+                            <i class="fas fa-eye"></i> Review
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        }
     }
     
     setupLoadingStates() {

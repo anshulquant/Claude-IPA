@@ -207,6 +207,26 @@
                                         </div>
                                     </div>
                                     
+                                    <!-- Screenshot Display -->
+                                    <div id="screenshot-display" class="screenshot-section" style="display: none;">
+                                        <div class="screenshot-header">
+                                            <i class="fas fa-camera"></i>
+                                            <span>Current Screenshot</span>
+                                        </div>
+                                        <div class="screenshot-container">
+                                            <img id="current-screenshot" src="" alt="Current screenshot" class="screenshot-image" style="max-width: 100%; display: block;">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Claude Reasoning Display -->
+                                    <div id="reasoning-display" class="reasoning-section" style="display: none;">
+                                        <div class="reasoning-header">
+                                            <i class="fas fa-brain"></i>
+                                            <span>Claude's Reasoning</span>
+                                        </div>
+                                        <div id="claude-reasoning" class="reasoning-content"></div>
+                                    </div>
+                                    
                                     <div class="execution-log">
                                         <div class="log-header">
                                             <i class="fas fa-list"></i>
@@ -250,6 +270,31 @@
 
                     <!-- Right Side - Details and Status -->
                     <div class="right-side" style="display: flex; flex-direction: column; gap: 1.5rem; width: 100%;">
+                        <!-- Pending Reviews Summary -->
+                        <div class="card mb-6">
+                            <div class="card-header">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fas fa-clipboard-check text-orange-500"></i>
+                                        <h2 class="card-title">Pending Reviews</h2>
+                                        <span id="pending-reviews-count" class="badge badge-primary">0</span>
+                                    </div>
+                                    <a href="/review-queue" class="btn btn-outline btn-sm">
+                                        <i class="fas fa-external-link-alt"></i> View All
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div id="pending-reviews-summary" class="review-summary">
+                                    <div class="empty-state">
+                                        <i class="fas fa-check-circle text-green-500"></i>
+                                        <p>No pending reviews</p>
+                                        <small>All reviews have been processed</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <!-- Human Review System -->
                         <div class="card mb-6">
                             <div class="card-header">
