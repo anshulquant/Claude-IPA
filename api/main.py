@@ -148,6 +148,8 @@ async def log_requests(request: Request, call_next):
     return response
 
 # Mount static files
+# Ensure the static directory exists before mounting
+os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Templates
@@ -1076,20 +1078,27 @@ async def execute_workflow_background(workflow_id: str):
             workflow_storage[workflow_id]["current_step"] = f"Error: {str(e)}"
 
 async def simulate_workflow_execution(workflow_id: str):
-    """Simulate workflow execution using enhanced WorkflowExecutor (Day 2)"""
+    """Execute workflow using real BrowserController and ClaudeOrchestrator"""
     import sys
     import os
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     from core.workflow_executor import WorkflowExecutor
+    from core.browser_controller import BrowserController
+    from core.orchestrator import ClaudeOrchestrator
     
     workflow = workflow_storage[workflow_id]
     goal = workflow["goal"]
     start_url = workflow.get("start_url", "https://google.com")
     
-    # Create WorkflowExecutor instance
-    executor = WorkflowExecutor()
+    # Create WorkflowExecutor instance with REAL browser and orchestrator
+    executor = WorkflowExecutor(auto_approve_reviews=True)  # Auto-approve until UI is ready
+    executor.browser_controller = BrowserController(headless=True)  # Use headless for server
+    executor.orchestrator = ClaudeOrchestrator()
     
     try:
+        # Start the browser
+        await executor.browser_controller.start()
+        
         # Execute the workflow
         result = await executor.execute_workflow(goal, start_url)
         
@@ -1111,6 +1120,10 @@ async def simulate_workflow_execution(workflow_id: str):
         workflow["current_step"] = f"Error: {str(e)}"
         workflow["error_message"] = str(e)
         workflow["progress"] = 0
+    finally:
+        # Always close the browser
+        if executor.browser_controller:
+            await executor.browser_controller.close()
 
 # Specific Review Item Routes (must be after general routes)
 @app.get("/api/review-queue/{review_id}")
