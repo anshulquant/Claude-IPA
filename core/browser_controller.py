@@ -9,7 +9,7 @@ import asyncio
 import logging
 import base64
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List, Dict, Any
 from datetime import datetime
 
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page, Playwright
@@ -195,12 +195,23 @@ class BrowserController:
             logger.error(f"Failed to get page text: {e}")
             return ""
     
-    async def get_form_fields(self) -> str:
+    async def get_form_fields(self) -> List[Dict[str, Any]]:
         """
         Extract form field information from the current page.
         
         Returns:
-            Formatted string with form field details (name, type, value, placeholder)
+            List of dicts with form field details:
+            [
+                {
+                    "name": "custname",
+                    "type": "text",
+                    "selector": "input[name='custname']",
+                    "value": "John Doe",  # Current value
+                    "placeholder": "Enter name",
+                    "is_filled": True
+                },
+                ...
+            ]
         
         Raises:
             RuntimeError: If browser is not started
@@ -209,39 +220,91 @@ class BrowserController:
             raise RuntimeError("Browser is not started. Call start() first.")
         
         try:
-            fields_info = []
+            fields_data = []
             
             # Get all input fields
             inputs = await self._page.query_selector_all('input')
             for inp in inputs:
                 name = await inp.get_attribute('name') or ''
                 input_type = await inp.get_attribute('type') or 'text'
-                value = await inp.get_attribute('value') or ''
                 placeholder = await inp.get_attribute('placeholder') or ''
                 
-                if input_type in ['radio', 'checkbox']:
-                    fields_info.append(f"- input[name='{name}'][type='{input_type}'][value='{value}']")
+                # Skip hidden and submit/button inputs (handle separately)
+                if input_type in ['hidden', 'submit', 'button']:
+                    continue
+                
+                # Get value - use input_value() for text inputs, get_attribute() for others
+                value = ''
+                try:
+                    if input_type in ['text', 'email', 'tel', 'password', 'search', 'url', 'number']:
+                        value = await inp.input_value()
+                    elif input_type in ['radio', 'checkbox']:
+                        # For radio/checkbox, check if selected
+                        is_checked = await inp.is_checked()
+                        value = await inp.get_attribute('value') if is_checked else ''
+                    else:
+                        value = await inp.get_attribute('value') or ''
+                except Exception as e:
+                    logger.debug(f"Could not get value for {name}: {e}")
+                    value = await inp.get_attribute('value') or ''
+                
+                # Build selector
+                if name:
+                    selector = f"input[name='{name}']"
+                elif input_type:
+                    selector = f"input[type='{input_type}']"
                 else:
-                    field_str = f"- input[name='{name}'][type='{input_type}']"
-                    if placeholder:
-                        field_str += f" (placeholder: '{placeholder}')"
-                    fields_info.append(field_str)
+                    continue  # Skip if no identifiable attribute
+                
+                fields_data.append({
+                    "name": name,
+                    "type": input_type,
+                    "selector": selector,
+                    "value": value,
+                    "placeholder": placeholder,
+                    "is_filled": bool(value and value.strip())
+                })
             
             # Get all select fields
             selects = await self._page.query_selector_all('select')
             for sel in selects:
                 name = await sel.get_attribute('name') or ''
-                fields_info.append(f"- select[name='{name}']")
+                # Get selected option value
+                try:
+                    selected_option = await sel.query_selector('option[selected]')
+                    value = await selected_option.get_attribute('value') if selected_option else ''
+                except:
+                    value = ''
+                
+                if name:
+                    fields_data.append({
+                        "name": name,
+                        "type": "select",
+                        "selector": f"select[name='{name}']",
+                        "value": value,
+                        "placeholder": "",
+                        "is_filled": bool(value)
+                    })
             
             # Get all textarea fields
             textareas = await self._page.query_selector_all('textarea')
             for ta in textareas:
                 name = await ta.get_attribute('name') or ''
                 placeholder = await ta.get_attribute('placeholder') or ''
-                field_str = f"- textarea[name='{name}']"
-                if placeholder:
-                    field_str += f" (placeholder: '{placeholder}')"
-                fields_info.append(field_str)
+                try:
+                    value = await ta.input_value()
+                except:
+                    value = ''
+                
+                if name:
+                    fields_data.append({
+                        "name": name,
+                        "type": "textarea",
+                        "selector": f"textarea[name='{name}']",
+                        "value": value,
+                        "placeholder": placeholder,
+                        "is_filled": bool(value and value.strip())
+                    })
 
             # Get all button elements (including submit buttons)
             buttons = await self._page.query_selector_all('button, input[type="submit"], input[type="button"]')
@@ -254,21 +317,30 @@ class BrowserController:
                 btn_name = await btn.get_attribute('name') or ''
                 btn_value = await btn.get_attribute('value') or ''
 
+                selector = ""
                 if btn_text:
-                    fields_info.append(f"- button (text: '{btn_text}')")
+                    selector = f"text={btn_text}"
                 elif btn_name:
-                    fields_info.append(f"- button[name='{btn_name}']")
+                    selector = f"button[name='{btn_name}']"
                 elif btn_value:
-                    fields_info.append(f"- input[type='{btn_type}'][value='{btn_value}']")
+                    selector = f"input[type='{btn_type}'][value='{btn_value}']"
                 else:
-                    fields_info.append(f"- button[type='{btn_type}']")
+                    selector = f"button[type='{btn_type}']"
+                
+                fields_data.append({
+                    "name": btn_name or btn_text,
+                    "type": "button",
+                    "selector": selector,
+                    "value": btn_value or btn_text,
+                    "placeholder": "",
+                    "is_filled": False  # Buttons are never "filled"
+                })
 
-            result = "\n".join(fields_info) if fields_info else "No form fields found"
-            logger.info(f"Extracted {len(fields_info)} form fields")
-            return result
+            logger.info(f"Extracted {len(fields_data)} form fields")
+            return fields_data
         except Exception as e:
-            logger.error(f"Failed to get form fields: {e}")
-            return ""
+            logger.error(f"Failed to get form fields: {e}", exc_info=True)
+            return []
     
     async def get_page_html(self) -> str:
         """
@@ -398,7 +470,7 @@ class BrowserController:
     
     async def click_by_text(self, text: str, retry: int = 3) -> bool:
         """
-        Click element containing specific text.
+        Click element by visible text content.
         
         Args:
             text: Text content to search for
@@ -417,9 +489,18 @@ class BrowserController:
         for attempt in range(retry):
             try:
                 logger.info(f"Attempting to click element with text: '{text}' (attempt {attempt + 1}/{retry})")
-                await self._page.click(f"text={text}")
-                logger.info(f"Successfully clicked element with text: '{text}'")
-                return True
+                
+                # First try: exact text match with clickable elements only
+                try:
+                    await self._page.click(f"button:has-text('{text}'), a:has-text('{text}'), input[type='submit']:has-text('{text}')", timeout=3000)
+                    logger.info(f"Successfully clicked clickable element with text: '{text}'")
+                    return True
+                except:
+                    # Fallback: try generic text selector
+                    await self._page.click(f"text={text}", timeout=3000)
+                    logger.info(f"Successfully clicked element with text: '{text}'")
+                    return True
+                    
             except Exception as e:
                 if attempt == retry - 1:
                     logger.error(f"Failed to click text '{text}' after {retry} attempts: {e}")
@@ -429,7 +510,7 @@ class BrowserController:
         
         return False
     
-    async def type_text(self, selector: str, text: str, clear_first: bool = True, retry: int = 3) -> bool:
+    async def type_text(self, selector: str, text: str, clear_first: bool = True, retry: int = 3, press_enter: bool = False) -> bool:
         """
         Type text into an input field.
         
@@ -438,6 +519,7 @@ class BrowserController:
             text: Text to type
             clear_first: Whether to clear existing text first
             retry: Number of retry attempts
+            press_enter: Whether to press Enter after typing (useful for search fields)
         
         Returns:
             True if typing succeeded
@@ -466,6 +548,11 @@ class BrowserController:
                     await self._page.fill(selector, text)
                 else:
                     await self._page.type(selector, text)
+                
+                # Press Enter if requested (useful for search forms)
+                if press_enter:
+                    logger.info(f"Pressing Enter after typing")
+                    await self._page.press(selector, 'Enter')
                 
                 logger.info(f"Successfully typed into: {selector}")
                 return True

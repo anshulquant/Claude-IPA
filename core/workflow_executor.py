@@ -136,6 +136,7 @@ class WorkflowExecutor:
         self.auto_approve_reviews = auto_approve_reviews  # Auto-approve for testing
         self.filled_fields = set()  # Track fields we've already filled
         self.action_history = []  # Track recent actions to detect loops
+        self.last_url = None  # Track URL changes to detect navigation
         self.performance_metrics = {
             "total_execution_time": 0.0,
             "average_step_time": 0.0,
@@ -623,6 +624,19 @@ class WorkflowExecutor:
             "step": self.current_step
         })
         
+        # Detect if we're stuck in a loop (same action 3+ times in a row)
+        if len(self.action_history) >= 3:
+            last_3_actions = self.action_history[-3:]
+            last_3_targets = [a.get('target') for a in last_3_actions]
+            last_3_types = [a.get('action') for a in last_3_actions]
+            
+            # If same action on same target 3 times, force wait for page change
+            if (len(set(last_3_targets)) == 1 and len(set(last_3_types)) == 1 and 
+                last_3_targets[0] and last_3_types[0] == 'type'):
+                logger.warning(f"⚠️ LOOP DETECTED: Typed into '{last_3_targets[0]}' 3 times in a row!")
+                logger.info("Waiting 2 seconds for page to load...")
+                await asyncio.sleep(2)
+        
         # Add success log with details
         if result.get("success", True):
             self._add_log_entry(f"Step {self.current_step}", f"✅ Successfully executed {action_type}", "success")
@@ -652,28 +666,83 @@ class WorkflowExecutor:
                 _, _, screenshot_b64 = await self.browser_controller.capture_screenshot()
                 page_text = await self.browser_controller.get_page_text()
                 
+                # Track URL changes
+                current_url = self.browser_controller._page.url if self.browser_controller._page else None
+                url_changed = False
+                if self.last_url and current_url and self.last_url != current_url:
+                    url_changed = True
+                    logger.info(f"🔄 URL changed: {self.last_url} → {current_url}")
+                self.last_url = current_url
+                
                 # Get form fields if available
                 form_fields = ""
+                form_fields_list = []
                 try:
-                    fields = await self.browser_controller.get_form_fields()
-                    if fields:
-                        form_fields = "\n".join([f"- {f['name']} ({f['type']})" for f in fields])
-                        logger.info(f"Found {len(fields)} form fields")
+                    form_fields_list = await self.browser_controller.get_form_fields()
+                    if form_fields_list:
+                        # Build formatted string for Claude
+                        field_lines = []
+                        for f in form_fields_list:
+                            status = "✅ FILLED" if f.get('is_filled') else "⬜ EMPTY"
+                            value_info = f" = '{f.get('value', '')}'" if f.get('is_filled') else ""
+                            field_lines.append(f"- {f['selector']} ({f['type']}) {status}{value_info}")
+                        form_fields = "\n".join(field_lines)
+                        logger.info(f"Found {len(form_fields_list)} form fields ({sum(1 for f in form_fields_list if f.get('is_filled'))} filled)")
                 except Exception as e:
-                    logger.warning(f"Could not get form fields: {e}")
+                    logger.warning(f"Could not get form fields: {e}", exc_info=True)
                 
-                # Build context with action history
+                # Build context with action history and filled field info
                 context = f"Iteration {iteration}/{self.max_steps}"
-                if self.filled_fields:
-                    context += f"\n\nALREADY FILLED FIELDS (DO NOT FILL AGAIN):\n"
-                    for field in self.filled_fields:
-                        context += f"- {field}\n"
                 
+                # Show URL change if it happened
+                if url_changed:
+                    context += f"\n\n🔄 PAGE CHANGED! New URL: {current_url}"
+                    context += f"\nThe page has navigated to a new location. Check if the goal is achieved."
+                
+                # Show which fields are already filled (from form detection)
+                if form_fields_list:
+                    filled = [f for f in form_fields_list if f.get('is_filled')]
+                    empty = [f for f in form_fields_list if not f.get('is_filled') and f.get('type') != 'button']
+                    
+                    if filled:
+                        context += f"\n\n✅ ALREADY FILLED FIELDS (DO NOT FILL AGAIN):\n"
+                        for field in filled:
+                            context += f"- {field['selector']} = '{field['value']}'\n"
+                    
+                    if empty:
+                        context += f"\n\n⬜ EMPTY FIELDS (need to be filled):\n"
+                        for field in empty:
+                            context += f"- {field['selector']} ({field['type']})\n"
+                
+                # Show recent actions to detect loops
                 if len(self.action_history) > 0:
-                    recent_actions = self.action_history[-3:]  # Last 3 actions
-                    context += f"\n\nRECENT ACTIONS:\n"
-                    for action in recent_actions:
-                        context += f"- {action.get('action')} on {action.get('target', 'N/A')}\n"
+                    recent_actions = self.action_history[-5:]  # Last 5 actions
+                    context += f"\n\n📝 RECENT ACTIONS:\n"
+                    for i, action in enumerate(recent_actions, 1):
+                        context += f"{i}. {action.get('action')} on {action.get('target', 'N/A')}\n"
+                    
+                    # Detect if we're repeating the same action
+                    if len(recent_actions) >= 3:
+                        last_3_targets = [a.get('target') for a in recent_actions[-3:]]
+                        if len(set(last_3_targets)) == 1 and last_3_targets[0]:
+                            context += f"\n⚠️ WARNING: You've acted on '{last_3_targets[0]}' 3 times in a row. This field is likely already filled. Move to the next empty field or complete the workflow.\n"
+                
+                # Check if all required fields are filled - auto-complete if so
+                if form_fields_list:
+                    required_fields = [f for f in form_fields_list if f.get('type') not in ['button', 'radio', 'checkbox']]
+                    filled_required = [f for f in required_fields if f.get('is_filled')]
+                    
+                    if required_fields and len(filled_required) == len(required_fields):
+                        logger.info(f"🎉 All {len(required_fields)} required fields are filled! Auto-completing workflow.")
+                        return {
+                            "action": "complete",
+                            "target": "",
+                            "value": "",
+                            "reasoning": f"All {len(required_fields)} required form fields are filled. Workflow goal achieved.",
+                            "confidence": 1.0,
+                            "needs_human_review": False,
+                            "description": "Auto-complete: All fields filled"
+                        }
                 
                 # Get Claude's decision using the correct method
                 logger.info("Calling Claude API for decision...")
@@ -881,8 +950,24 @@ class WorkflowExecutor:
     async def _type(self, target: str, text: str) -> Dict[str, Any]:
         """Type text using browser controller or mock"""
         if self.browser_controller:
-            await self.browser_controller.type_text(target, text)
-            return {"success": True, "message": f"Successfully typed '{text}' into {target}", "target": target, "text": text}
+            # Detect if this is a search field - if so, press Enter after typing
+            is_search_field = (
+                'search' in target.lower() or
+                'name=\'search\'' in target.lower() or
+                'name="search"' in target.lower() or
+                'type=\'search\'' in target.lower() or
+                'type="search"' in target.lower() or
+                'name=\'q\'' in target.lower() or
+                'name="q"' in target.lower()
+            )
+            
+            if is_search_field:
+                logger.info(f"🔍 Detected search field, will press Enter after typing")
+                await self.browser_controller.type_text(target, text, press_enter=True)
+                return {"success": True, "message": f"Successfully typed '{text}' into {target} and pressed Enter", "target": target, "text": text}
+            else:
+                await self.browser_controller.type_text(target, text)
+                return {"success": True, "message": f"Successfully typed '{text}' into {target}", "target": target, "text": text}
         else:
             return await self._mock_type(target, text)
     
